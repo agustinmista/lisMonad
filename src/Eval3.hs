@@ -2,7 +2,7 @@ module Eval3 (eval) where
 
 import AST
 import Control.Applicative (Applicative(..))
-import Control.Monad       (liftM, ap)  
+import Control.Monad       (liftM, ap)
 
 -- Estados
 type Env = [(Variable,Int)]
@@ -11,18 +11,111 @@ type Env = [(Variable,Int)]
 initState :: Env
 initState = []
 
+-- Mónada estado
+newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: (Env, Int) -> Maybe (a, Env, Int) }
+
+instance Monad StateErrorTick where
+    return x = StateErrorTick $ \(s,c) -> Just (x, s, c)
+    m  >>= f = StateErrorTick $ \(s,c) -> case runStateErrorTick m (s,c) of
+                        Just (v, s', c') -> runStateErrorTick (f v) (s', c')
+                        Nothing          -> Nothing
+
+
+-- Clase para representar mónadas con estado de variables
+class Monad m => MonadState m where
+    -- Busca el valor de una variable
+    lookfor :: Variable -> m Int
+    -- Cambia el valor de una variable
+    update :: Variable -> Int -> m ()
+
+instance MonadState StateErrorTick where
+    lookfor v = StateErrorTick $ \(s,c) -> case lookfor' v s of
+                    Just m  -> Just (m, s, c)
+                    Nothing -> Nothing
+                where lookfor' v [] = Nothing
+                      lookfor' v ((u, j):ss) | v == u = Just j
+                                             | v /= u = lookfor' v ss
+    update v i = StateErrorTick $ \(s,c) -> Just ((), update' v i s, c)
+                 where update' v i [] = [(v, i)]
+                       update' v i ((u, _):ss) | v == u = (v, i):ss
+                       update' v i ((u, j):ss) | v /= u = (u, j):(update' v i ss)
+
+-- Clase para representar mónadas que lanzan errores
+class Monad m => MonadError m where
+   -- Lanza un error
+   throw :: m a
+
+instance MonadError StateErrorTick where
+    throw = StateErrorTick (\_ -> Nothing)
+
+-- Clase para representar mónadas con conteo de operaciones aritméticas
+class Monad m => MonadTick m where
+    -- Incrementa el contador en una unidad
+    tick :: m ()
+
+instance MonadTick StateErrorTick where
+    tick = StateErrorTick $ \(s, c) -> Just ((), s, c+1)
+
 -- Evalua un programa en el estado nulo
-eval :: Comm -> Env
-eval = undefined
+eval :: Comm -> (Env, Int)
+eval p = case runStateErrorTick (evalComm p) (initState, 0) of
+            Just (v, s, c) -> (s, c)
+            Nothing        -> error "Ocurrió un error!"
 
 -- Evalua un comando en un estado dado
-evalComm :: Comm -> m ()
-evalComm = undefined
+evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
+evalComm Skip              = return ()
+evalComm (Let var ie)      = do ie' <- evalIntExp ie
+                                update var ie'
+evalComm (Seq c1 c2)       = evalComm c1 >> evalComm c2
+evalComm (Cond cond cT cF) = do b <- evalBoolExp cond
+                                if b then evalComm cT
+                                     else evalComm cF
+evalComm (While cond c)    = do b <- evalBoolExp cond
+                                if b then evalComm (Seq c (While cond c))
+                                     else return ()
 
 -- Evalua una expresion entera, sin efectos laterales
-evalIntExp :: IntExp -> m Int
-evalIntExp = undefined
+evalIntExp :: (MonadState m, MonadError m, MonadTick m) => IntExp -> m Int
+evalIntExp (Const  int)    = return int
+evalIntExp (Var    var)    = lookfor var
+evalIntExp (UMinus ie )    = evalIntExp ie >>= \ie' -> return (-ie')
+evalIntExp (Plus  ie1 ie2) = do ie1' <- evalIntExp ie1
+                                ie2' <- evalIntExp ie2
+                                tick
+                                return (ie1' + ie2')
+evalIntExp (Minus ie1 ie2) = do ie1' <- evalIntExp ie1
+                                ie2' <- evalIntExp ie2
+                                tick
+                                return (ie1' - ie2')
+evalIntExp (Times ie1 ie2) = do ie1' <- evalIntExp ie1
+                                ie2' <- evalIntExp ie2
+                                tick
+                                return (ie1' * ie2')
+evalIntExp (Div   ie1 ie2) = do ie1' <- evalIntExp ie1
+                                ie2' <- evalIntExp ie2
+                                if ie2' == 0
+                                    then throw
+                                    else do tick
+                                            return (ie1' `div` ie2')
 
 -- Evalua una expresion entera, sin efectos laterales
-evalBoolExp :: BoolExp -> m Bool
-evalBoolExp = undefined
+evalBoolExp :: (MonadState m, MonadError m, MonadTick m) => BoolExp -> m Bool
+evalBoolExp BFalse        = return False
+evalBoolExp BTrue         = return True
+evalBoolExp (Eq  ie1 ie2) = do ie1' <- evalIntExp ie1
+                               ie2' <- evalIntExp ie2
+                               return (ie1' == ie2')
+evalBoolExp (Lt  ie1 ie2) = do ie1' <- evalIntExp ie1
+                               ie2' <- evalIntExp ie2
+                               return (ie1' < ie2')
+evalBoolExp (Gt  ie1 ie2) = do ie1' <- evalIntExp ie1
+                               ie2' <- evalIntExp ie2
+                               return (ie1' > ie2')
+evalBoolExp (And be1 be2) = do be1' <- evalBoolExp be1
+                               be2' <- evalBoolExp be2
+                               return (be1' && be2')
+evalBoolExp (Or  be1 be2) = do be1' <- evalBoolExp be1
+                               be2' <- evalBoolExp be2
+                               return (be1' || be2')
+evalBoolExp (Not be)      = evalBoolExp be >>= \be' -> return (not be')

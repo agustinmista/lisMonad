@@ -2,16 +2,16 @@ module Main where
 
 import System.Environment (getArgs,getProgName)
 import Parser(parser)
--- El modulo Parser tambien exporta una funcion 
--- 
+-- El modulo Parser tambien exporta una funcion
+--
 --   parser :: String -> Comm
 --
--- que convierte una cadena de caracteres que representa un programa LIS en una 
+-- que convierte una cadena de caracteres que representa un programa LIS en una
 -- expresion de tipo Comm.
 
 
 -- Modificar este import para usar diferentes evaluadores
-import Eval1
+import Eval3
 ---------------------------------------------------------
 
 main :: IO ()
@@ -22,7 +22,7 @@ main = do args <- getArgs
 
 -- Ejecuta un programa a partir de su archivo fuente
 run :: [Char] -> IO ()
-run ifile = 
+run ifile =
     do
     s <- readFile ifile
     (print . eval) (parser s)
