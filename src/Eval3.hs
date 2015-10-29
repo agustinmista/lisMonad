@@ -11,17 +11,20 @@ type Env = [(Variable,Int)]
 initState :: Env
 initState = []
 
--- Mónada estado
-newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: (Env, Int) -> Maybe (a, Env, Int) }
+------- Mónada estado-----------------------------------------------------------
+newtype StateErrorTick a =
+    StateErrorTick { runStateErrorTick :: Env -> Maybe (a, Env, Int) }
 
 instance Monad StateErrorTick where
-    return x = StateErrorTick $ \(s,c) -> Just (x, s, c)
-    m  >>= f = StateErrorTick $ \(s,c) -> case runStateErrorTick m (s,c) of
-                        Just (v, s', c') -> runStateErrorTick (f v) (s', c')
-                        Nothing          -> Nothing
+    return x = StateErrorTick $ \s -> Just (x, s, 0)
+    m >>= f  = StateErrorTick $ \s -> case (runStateErrorTick m) s of
+                Nothing         -> Nothing
+                Just (v, s', c) -> case (runStateErrorTick (f v)) s' of
+                                      Nothing            -> Nothing
+                                      Just (v', s'', c') -> Just (v', s'', c+c')
+--------------------------------------------------------------------------------
 
-
--- Clase para representar mónadas con estado de variables
+------- Clase para representar mónadas con estado de variables -----------------
 class Monad m => MonadState m where
     -- Busca el valor de una variable
     lookfor :: Variable -> m Int
@@ -29,38 +32,51 @@ class Monad m => MonadState m where
     update :: Variable -> Int -> m ()
 
 instance MonadState StateErrorTick where
-    lookfor v = StateErrorTick $ \(s,c) -> case lookfor' v s of
-                    Just m  -> Just (m, s, c)
+    lookfor v = StateErrorTick $ \s -> case lookfor' v s of
+                    Just m  -> Just (m, s, 0)
                     Nothing -> Nothing
                 where lookfor' v [] = Nothing
                       lookfor' v ((u, j):ss) | v == u = Just j
                                              | v /= u = lookfor' v ss
-    update v i = StateErrorTick $ \(s,c) -> Just ((), update' v i s, c)
+    update v i = StateErrorTick $ \s -> Just ((), update' v i s, 0)
                  where update' v i [] = [(v, i)]
                        update' v i ((u, _):ss) | v == u = (v, i):ss
                        update' v i ((u, j):ss) | v /= u = (u, j):(update' v i ss)
+--------------------------------------------------------------------------------
 
--- Clase para representar mónadas que lanzan errores
+------- Clase para representar mónadas que lanzan errores ----------------------
 class Monad m => MonadError m where
    -- Lanza un error
    throw :: m a
 
 instance MonadError StateErrorTick where
     throw = StateErrorTick (\_ -> Nothing)
+--------------------------------------------------------------------------------
 
--- Clase para representar mónadas con conteo de operaciones aritméticas
+------- Clase para representar mónadas con conteo de operaciones aritméticas ---
 class Monad m => MonadTick m where
     -- Incrementa el contador en una unidad
     tick :: m ()
 
 instance MonadTick StateErrorTick where
-    tick = StateErrorTick $ \(s, c) -> Just ((), s, c+1)
+    tick = StateErrorTick $ \s -> Just ((), s, 1)
+--------------------------------------------------------------------------------
+
+-- Para calmar al GHC
+instance Functor StateErrorTick where
+    fmap = liftM
+
+instance Applicative StateErrorTick where
+    pure   = return
+    (<*>)  = ap
+
 
 -- Evalua un programa en el estado nulo
 eval :: Comm -> (Env, Int)
-eval p = case runStateErrorTick (evalComm p) (initState, 0) of
+eval p = case runStateErrorTick (evalComm p) initState of
             Just (v, s, c) -> (s, c)
             Nothing        -> error "Ocurrió un error!"
+
 
 -- Evalua un comando en un estado dado
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
@@ -74,6 +90,7 @@ evalComm (Cond cond cT cF) = do b <- evalBoolExp cond
 evalComm (While cond c)    = do b <- evalBoolExp cond
                                 if b then evalComm (Seq c (While cond c))
                                      else return ()
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalIntExp :: (MonadState m, MonadError m, MonadTick m) => IntExp -> m Int
@@ -98,6 +115,7 @@ evalIntExp (Div   ie1 ie2) = do ie1' <- evalIntExp ie1
                                     then throw
                                     else do tick
                                             return (ie1' `div` ie2')
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalBoolExp :: (MonadState m, MonadError m, MonadTick m) => BoolExp -> m Bool

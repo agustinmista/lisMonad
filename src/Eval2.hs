@@ -11,16 +11,17 @@ type Env = [(Variable,Int)]
 initState :: Env
 initState = []
 
--- Mónada estado
+------- Mónada estado-----------------------------------------------------------
 newtype StateError a = StateError { runStateError :: Env -> Maybe (a, Env) }
 
 instance Monad StateError where
     return x = StateError $ \s -> Just (x, s)
-    m  >>= f = StateError $ \s -> case runStateError m s of
-                        Just (v, s') -> runStateError (f v) s'
+    m  >>= f = StateError $ \s -> case (runStateError m) s of
+                        Just (v, s') -> (runStateError (f v)) s'
                         Nothing      -> Nothing
+--------------------------------------------------------------------------------
 
--- Clase para representar mónadas con estado de variables
+------- Clase para representar mónadas con estado de variables -----------------
 class Monad m => MonadState m where
     -- Busca el valor de una variable
     lookfor :: Variable -> m Int
@@ -38,14 +39,16 @@ instance MonadState StateError where
                  where update' v i [] = [(v, i)]
                        update' v i ((u, _):ss) | v == u = (v, i):ss
                        update' v i ((u, j):ss) | v /= u = (u, j):(update' v i ss)
+--------------------------------------------------------------------------------
 
--- Clase para representar mónadas que lanzan errores
+------- Clase para representar mónadas que lanzan errores ----------------------
 class Monad m => MonadError m where
     -- Lanza un error
     throw :: m a
 
 instance MonadError StateError where
     throw = StateError (\_ -> Nothing)
+--------------------------------------------------------------------------------
 
 -- Para calmar al GHC
 instance Functor StateError where
@@ -62,6 +65,7 @@ eval p = case runStateError (evalComm p) initState of
             Just (v, s) -> s
             Nothing     -> error "Ocurrió un error!"
 
+
 -- Evalua un comando en un estado dado
 evalComm :: (MonadState m, MonadError m) => Comm -> m ()
 evalComm Skip              = return ()
@@ -74,6 +78,7 @@ evalComm (Cond cond cT cF) = do b <- evalBoolExp cond
 evalComm (While cond c)    = do b <- evalBoolExp cond
                                 if b then evalComm (Seq c (While cond c))
                                      else return ()
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalIntExp :: (MonadState m, MonadError m) => IntExp -> m Int
@@ -94,6 +99,7 @@ evalIntExp (Div   ie1 ie2) = do ie1' <- evalIntExp ie1
                                 if ie2' == 0
                                     then throw
                                     else return (ie1' `div` ie2')
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalBoolExp :: (MonadState m, MonadError m) => BoolExp -> m Bool

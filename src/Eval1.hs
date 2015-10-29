@@ -11,23 +11,16 @@ type Env = [(Variable,Int)]
 initState :: Env
 initState = []
 
--- Mónada estado
+------- Mónada estado-----------------------------------------------------------
 newtype State a = State { runState :: Env -> (a, Env) }
 
 instance Monad State where
     return x = State (\s -> (x, s))
     m >>= f  = State (\s -> let (v, s') = runState m s
                             in runState (f v) s')
+--------------------------------------------------------------------------------
 
--- Para calmar al GHC
-instance Functor State where
-    fmap = liftM
-
-instance Applicative State where
-    pure   = return
-    (<*>)  = ap
-
--- Clase para representar mónadas con estado de variables
+------- Clase para representar mónadas con estado de variables -----------------
 class Monad m => MonadState m where
     -- Busca el valor de una variable
     lookfor :: Variable -> m Int
@@ -42,10 +35,21 @@ instance MonadState State where
                  where update' v i [] = [(v, i)]
                        update' v i ((u, _):ss) | v == u = (v, i):ss
                        update' v i ((u, j):ss) | v /= u = (u, j):(update' v i ss)
+--------------------------------------------------------------------------------
+
+-- Para calmar al GHC
+instance Functor State where
+   fmap = liftM
+
+instance Applicative State where
+   pure   = return
+   (<*>)  = ap
+
 
 -- Evalua un programa en el estado nulo
 eval :: Comm -> Env
 eval p = snd (runState (evalComm p) initState)
+
 
 -- Evalua un comando en un estado dado
 evalComm :: MonadState m => Comm -> m ()
@@ -59,6 +63,7 @@ evalComm (Cond cond cT cF) = do b <- evalBoolExp cond
 evalComm (While cond c)    = do b <- evalBoolExp cond
                                 if b then evalComm (Seq c (While cond c))
                                      else return ()
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalIntExp :: MonadState m => IntExp -> m Int
@@ -77,6 +82,7 @@ evalIntExp (Times ie1 ie2) = do ie1' <- evalIntExp ie1
 evalIntExp (Div   ie1 ie2) = do ie1' <- evalIntExp ie1
                                 ie2' <- evalIntExp ie2
                                 return (ie1' `div` ie2')
+
 
 -- Evalua una expresion entera, sin efectos laterales
 evalBoolExp :: MonadState m => BoolExp -> m Bool
