@@ -17,11 +17,9 @@ newtype StateErrorTick a =
 
 instance Monad StateErrorTick where
     return x = StateErrorTick $ \s -> Just (x, s, 0)
-    m >>= f  = StateErrorTick $ \s -> case (runStateErrorTick m) s of
-                Nothing         -> Nothing
-                Just (v, s', c) -> case (runStateErrorTick (f v)) s' of
-                                      Nothing            -> Nothing
-                                      Just (v', s'', c') -> Just (v', s'', c+c')
+    m >>= f  = StateErrorTick $ \s -> do (v, s', c)    <- (runStateErrorTick m) s
+                                         (v', s'', c') <- (runStateErrorTick (f v)) s'
+                                         return (v', s'', c+c')
 --------------------------------------------------------------------------------
 
 ------- Clase para representar mónadas con estado de variables -----------------
