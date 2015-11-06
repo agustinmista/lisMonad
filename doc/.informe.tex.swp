@@ -1,0 +1,120 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr, float, graphicx, caption}
+\usepackage{amsmath, amssymb}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{multicol}
+\usepackage{proof}
+\usepackage{titlesec}
+
+\setlength{\inferLineSkip}{4pt}
+
+\titleformat{\subsection}[runin]
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}	
+\titleformat{\subsubsection}[runin]
+  {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+
+\pagestyle{fancy}
+\renewcommand{\figurename}{Figura}
+\renewcommand\abstractname{\textit{Abstract}}
+
+\fancyhf{}
+\fancyhead[LE,RO]{\textit{Intérprete de Cálculo Lambda Simple Tipado}}
+\fancyfoot[RE,CO]{\thepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{
+	%Logo UNR
+	\begin{figure}[!h]
+		\centering
+		\includegraphics[scale=1]{unr.png}
+		\label{}
+	\end{figure}
+	% Pie Logo
+	\normalsize
+		\textsc{Universidad Nacional de Rosario}\\	
+		\textsc{Facultad de Ciencias Exactas, Ingeniería y Agrimensura}\\
+		\textit{Licenciatura en Ciencias de la Computación}\\
+		\textit{Análisis de Lenguajes de Programación}\\
+	% Título
+	\vspace{30pt}
+	\hrule{}
+	\vspace{15pt}
+	\Large
+		\textbf{Intérprete de Cálculo Lambda Simple Tipado}\\
+	\vspace{15pt}
+	\hrule{}
+	\vspace{30pt}
+	% Alumnos/docentes
+	\begin{multicols}{2}
+	\raggedright
+		\large
+			\textbf{Alumnos:}\\
+		\normalsize
+			CRESPO, Lisandro (C-6165/4) \\
+			MISTA, Agustín (M-6105/1) \\
+			$\;$ \\
+			$\;$ \\
+	\raggedleft
+		\large
+			\textbf{Docentes:}\\
+		\normalsize
+			JASKELIOFF, Mauro\\
+			SIMICH, Eugenia\\
+			MANZINO, Cecilia\\
+			RABASEDAS, Juan Manuel\\
+	\end{multicols}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\date{14 de Octubre de 2015}
+\maketitle
+
+\pagebreak
+%----------------------------------------------------------
+\subsection*{Ejercicio 1.a} 
+	\emph{Demostramos que \texttt{State} es una mónada:}
+	\\
+	\\
+	\indent {Probamos que verifique las tres leyes de las mónadas.
+	
+	Comenzamos probando \texttt{return x $\gg=$ f = f x}}
+	\\
+	\begin{align*}
+  	&\ \ \ \ \ return\ x \gg= f
+  	\\ &=\langle \text{ def. \texttt{return} }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow (v, s')) \gg= f
+  	\\ &=\langle \text{ def. $>>=$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ (State\ (\lambda s \rightarrow (x, s))\ s\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ def. runState }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow (x, s))\ s\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ aplicación }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(x, s)\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ let }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow runState\ (f\ x)\ s)
+  	\\ &=\langle \text{ n-equivalencia }\rangle
+  	\\ &\ \ \ \ \ State\ (runState\ (f\ x))
+  	\\ &=\langle \text{ lema }\rangle
+  	\\ &\ \ \ \ \ id\ (f\ x)
+  	\\ &=\langle \text{ def. id }\rangle
+  	\\ &\ \ \ \ \ f\ x
+  	\end{align*}
+	\\
+	\pagebreak
+%----------------------------------------------------------
+\\
+\vspace{\fill}
+\begin{multicols}{2}
+	\hrule
+	\vspace{5pt}
+	CRESPO, Lisandro \\
+	\linebreak
+	\hrule
+	\vspace{5pt}
+	MISTA, Agustín \\
+\end{multicols}
+
+\end{document}
