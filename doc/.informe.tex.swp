@@ -44,7 +44,7 @@
 	\hrule{}
 	\vspace{15pt}
 	\Large
-		\textbf{Intérprete de Cálculo Lambda Simple Tipado}\\
+		\textbf{Programación Monádica}\\
 	\vspace{15pt}
 	\hrule{}
 	\vspace{30pt}
@@ -70,7 +70,7 @@
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
-\date{14 de Octubre de 2015}
+\date{05 de Noviembre de 2015}
 \maketitle
 
 \pagebreak
@@ -97,7 +97,7 @@
   	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow runState\ (f\ x)\ s)
   	\\ &=\langle \text{ $\eta$-equivalencia }\rangle
   	\\ &\ \ \ \ \ State\ (runState\ (f\ x))
-  	\\ &=\langle \text{ St $\circ$ runState = id }\rangle
+  	\\ &=\langle \text{ State $\circ$ runState = id }\rangle
   	\\ &\ \ \ \ \ id\ (f\ x)
   	\\ &=\langle \text{ def. id }\rangle
   	\\ &\ \ \ \ \ f\ x
@@ -119,7 +119,7 @@
 	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow runState\ m\ s)
   	\\ &=\langle \text{ aplicación }\rangle
   	\\ &\ \ \ \ \ State\ (runState\ m)
-  	\\ &=\langle \text{ St $\circ$ runState = id }\rangle
+  	\\ &=\langle \text{ State $\circ$ runState = id }\rangle
   	\\ &\ \ \ \ \ id\ m
   	\\ &=\langle \text{ def. id }\rangle
   	\\ &\ \ \ \ \ m
