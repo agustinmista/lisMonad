@@ -129,9 +129,15 @@
 	\indent {Por último, probamos \texttt{(t $\gg=$ f) $\gg=$ g = t $\gg=$ ($\lambda$x $\rightarrow$ f x $\gg=$ g)}.}
 	\\
 	\begin{align*}
-  	&\ \ \ \ \ ecuacion
-  	\\ &=\langle \text{ regla }\rangle
-  	\\ &\ \ \ \ \ ecuacion
+  	&\ \ \ \ \ (t \gg= f) \gg= g
+  	\\ &=\langle \text{ def $>>=$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ (t \gg= f)\ s\ in\ runState\ (g\ v)\ s')
+  	\\ &=\langle \text{ def $>>=$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ (State\ (\lambda s \rightarrow let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v) s'))\ s\ in\ runState\ (g\ v)\ s')
+  	\\ &=\langle \text{ def runState }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v) s'))\ s\ in\ runState\ (g\ v)\ s')
+  	\\ &=\langle \text{ aplicación }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v) s')\ in\ runState\ (g\ v)\ s')
   	\end{align*}
   	\\
 	\begin{align*}
