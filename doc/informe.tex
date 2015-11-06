@@ -102,27 +102,9 @@
   	\\ &=\langle \text{ def. id }\rangle
   	\\ &\ \ \ \ \ f\ x
   	\end{align*}
-  	\\
-  	\begin{align*}
-  &\ \ \ \ \ return\ x >>= f
-  \\ &=\langle \text{ definición de return }\rangle
-  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow (x,s)) >>= f
-  \\ &=\langle \text{ definición $>>=$ }\rangle
-  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow (x,s))\ s\ in\ runState\ (f\ v)\ s') 
-  \\ &=\langle \text{ aplicación }\rangle
-  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (v,s')=(x,s)\ in\ runState\ (f\ v)\ s'
-  \\ &=\langle \text{ definición de let }\rangle
-  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow\ runState\ (f\ x)\ s)
-  \\ &=\langle \text{ $\eta$-equivalencia }\rangle
-  \\ &\ \ \ \ \ St\ (runState\ (f\ x))
-  \\ &=\langle \text{ St $\circ$ runState = id }\rangle
-  \\  &\ \ \ \ \ f\ x
-\end{align*}
-	\pagebreak
 	\\
 	\indent {Continuamos probando \texttt{m $\gg=$ return = m}. Lo hacemos por inducción estructural sobre el tipo de datos \texttt{State}.}
 	\\
-	\\ \texttt{t = State h}
 	\begin{align*}
   	&\ \ \ \ \ m \gg= return
   	\\ &=\langle \text{ def. $>>=$ }\rangle
@@ -135,25 +117,52 @@
 	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ m\ s\ in\ (v,s'))
   	\\ &=\langle \text{ let }\rangle
 	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow runState\ m\ s)
-  	\\ &=\langle \text{ WHAAAAAAT }\rangle
+  	\\ &=\langle \text{ aplicación }\rangle
+  	\\ &\ \ \ \ \ State\ (runState\ m)
+  	\\ &=\langle \text{ St $\circ$ runState = id }\rangle
+  	\\ &\ \ \ \ \ id\ m
+  	\\ &=\langle \text{ def. id }\rangle
   	\\ &\ \ \ \ \ m
+  	\end{align*}
+  	\pagebreak
+	\\
+	\indent {Por último, probamos \texttt{(t $\gg=$ f) $\gg=$ g = t $\gg=$ ($\lambda$x $\rightarrow$ f x $\gg=$ g)}.}
+	\\
+	\begin{align*}
+  	&\ \ \ \ \ ecuacion
+  	\\ &=\langle \text{ regla }\rangle
+  	\\ &\ \ \ \ \ ecuacion
   	\end{align*}
   	\\
 	\begin{align*}
-	  &\ \ \ \ \ St\ h >>= return
-	  \\ &=\langle \text{ definición $>>=$ }\rangle
-	  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let(v,s') = h\ s\ in\ runState\ (return\ v)\ s')
-	  \\ &=\langle \text{ definición return }\rangle
-	  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let(v,s') = h\ s\ in\ runState\ (St\ (\lambda t \rightarrow (v,t)))\ s')
-	  \\ &=\langle \text{ runState $\circ$ St = id }\rangle
-	  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let(v,s') = h\ s\ in\ (\lambda t \rightarrow (v,t))\ s')
-	  \\ &=\langle \text{ aplicación }\rangle
-	  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let(v,s') = h\ s\ in\ (v,s'))
-	  \\ &=\langle \text{ definición de let }\rangle
-	  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow h\ s)
-	  \\ &=\langle \text{ $\eta$-equivalencia }\rangle
-	  \\ &\ \ \ \ \ St\ h
-	\end{align*}
+  &\ \ \ \ \ ((St\ h) >>= f) >>= g
+  \\ &=\langle \text{ definición $>>=$ }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')=h\ s\ in\ runState\ (f\ x)\ s') >>= g
+  \\ &=\langle \text{ definición $>>=$ }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda t \rightarrow let\ (y, t')=(\lambda s \rightarrow let\ (x,s')=h\ s\ in\ runState\ (f\ x)\ s')\ t\ in\ runState\ (g\ y)\ t')
+  \\ &=\langle \text{ aplicación }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda t \rightarrow let\ (y, t')=(let\ (x,s')= h\ t\ in\ runState\ (f\ x)\ s')\ in\ runState\ (g\ y)\ t')
+  \\ &=\langle \text{ f x :: State s a $\Rightarrow \exists f'\ /\  f\ x = St\ f'$ \label{sec:fxl}}\rangle
+  \\ &\ \ \ \ \ St\ (\lambda t \rightarrow let\ (y, t')=(let\ (x,s')= h\ t\ in\ runState\ (St\ f')\ s')\ in\ runState\ (g\ y)\ t')
+  \\ &=\langle \text{ runState $\circ$ St = id }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda t \rightarrow let\ (y, t')=(let\ (x,s')= h\ t\ in\ f'\ s')\ in\ runState\ (g\ y)\ t')
+  \\ &=\langle \text{ propiedad de let \ref{let}}\rangle
+  \\ &\ \ \ \ \ St\ (\lambda t \rightarrow let\ (x,s')= h\ t\ in\ (let\ (y, t')=f'\ s'\ in\ runState\ (g\ y)\ t'))
+  \\ &=\langle \text{ $\alpha$-equivalencia }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ (let\ (y, t')=f'\ s'\ in\ runState\ (g\ y)\ t'))
+  \\ &=\langle \text{ abstracción }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ (\lambda t\rightarrow let\ (y, t')=f'\ t\ in\ runState\ (g\ y)\ t')\ s')
+  \\ &=\langle \text{ runState $\circ$ St = id }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ runState (St (\lambda t\rightarrow let\ (y, t')=f'\ t\ in\ runState\ (g\ y)\ t'))\ s')
+  \\ &=\langle \text{ definición $>>=$ }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ runState\ (St\ f' >>= g)\ s')
+  \\ &=\langle \text{ $St\ f' = f\ x$ \ref{sec:fxl}}\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ runState\ (f\ x >>= g)\ s')
+  \\ &=\langle \text{ aplicación }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (x,s')= h\ s\ in\ runState\ ((\lambda x\rightarrow f\ x >>= g)\ x)\ s')
+  \\ &=\langle \text{ definición $>>=$ }\rangle
+  \\ &\ \ \ \ \ (St\ h) >>= (\lambda x \rightarrow f\ x >>= g)
+\end{align*}
 	\\
 	\pagebreak
 %----------------------------------------------------------
