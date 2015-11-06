@@ -102,6 +102,46 @@
   	\\ &=\langle \text{ def. id }\rangle
   	\\ &\ \ \ \ \ f\ x
   	\end{align*}
+  	\\
+  	\begin{align*}
+  &\ \ \ \ \ return\ x >>= f
+  \\ &=\langle \text{ definición de return }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow (x,s)) >>= f
+  \\ &=\langle \text{ definición $>>=$ }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow (x,s))\ s\ in\ runState\ (f\ v)\ s') 
+  \\ &=\langle \text{ aplicación }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow let\ (v,s')=(x,s)\ in\ runState\ (f\ v)\ s'
+  \\ &=\langle \text{ definición de let }\rangle
+  \\ &\ \ \ \ \ St\ (\lambda s \rightarrow\ runState\ (f\ x)\ s)
+  \\ &=\langle \text{ $\eta$-equivalencia }\rangle
+  \\ &\ \ \ \ \ St\ (runState\ (f\ x))
+  \\ &=\langle \text{ St $\circ$ runState = id }\rangle
+  \\  &\ \ \ \ \ f\ x
+\end{align*}
+	\\
+	\indent {Continuamos probando \texttt{m $\gg=$ return = m}. Lo hacemos por inducción estructural sobre el tipo de datos \texttt{State}.}
+	\\
+	\\ \texttt{t = State h}
+	\begin{align*}
+  	&\ \ \ \ \ m \gg= return
+  	\\ &=\langle \text{ def. $>>=$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ m\ s\ in\ runState\ (return\ v)\ s')
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow (v, s')) \gg= f
+  	\\ &=\langle \text{ def. $>>=$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=runState\ (State\ (\lambda s \rightarrow (x, s))\ s\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ def. runState }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow (x, s))\ s\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ aplicación }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(x, s)\ in\ runState\ (f\ v)\ s')
+  	\\ &=\langle \text{ let }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow runState\ (f\ x)\ s)
+  	\\ &=\langle \text{ n-equivalencia }\rangle
+  	\\ &\ \ \ \ \ State\ (runState\ (f\ x))
+  	\\ &=\langle \text{ lema }\rangle
+  	\\ &\ \ \ \ \ id\ (f\ x)
+  	\\ &=\langle \text{ def. id }\rangle
+  	\\ &\ \ \ \ \ f\ x
+  	\end{align*}
 	\\
 	\pagebreak
 %----------------------------------------------------------
