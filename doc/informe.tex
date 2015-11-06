@@ -137,7 +137,9 @@
   	\\ &=\langle \text{ def runState }\rangle
   	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=(\lambda s \rightarrow let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v) s'))\ s\ in\ runState\ (g\ v)\ s')
   	\\ &=\langle \text{ aplicación }\rangle
-  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v) s')\ in\ runState\ (g\ v)\ s')
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=let\ (v,s')=runState\ t\ s\ in\ runState\ (f\ v)\; s')\ in\ runState\ (g\ v)\ s')
+  	\\ &=\langle \text{ introducción State $(f\;v :: State \; s \rightarrow \exists \; f'\; / f\;v \ = \ State \; f'  )$ }\rangle
+  	\\ &\ \ \ \ \ State\ (\lambda s \rightarrow let\ (v,s')=let\ (v,s')=runState\ t\ s\ in\ runState\ (State\;f')\; s')\ in\ runState\ (g\ v)\ s')
   	\end{align*}
   	\\
 	\begin{align*}
